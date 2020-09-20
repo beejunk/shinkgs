@@ -3,10 +3,13 @@ import React, { useEffect, useState, useRef } from "react";
 import Board from "./Board";
 import type {
   GameChannel,
+  GameNode,
+  GameTree,
   Point,
   BoardPointMark,
   PlayerColor,
 } from "../../model/types";
+import { SOUNDS } from "../../sound";
 
 type Props = {
   game: GameChannel,
@@ -24,16 +27,28 @@ type State = {
   marginTop: number,
 };
 
+function getLastNode(tree: GameTree): GameNode {
+  let nodeIds = Object.keys(tree.nodes);
+  let lastNodeId = Number(nodeIds[nodeIds.length - 1]);
+
+  return tree.nodes[lastNodeId];
+}
+
 export default function BoardContainer(props: Props) {
   let { game, onClickPoint } = props;
   let { tree } = game;
+  let lastNode = tree && getLastNode(tree);
   let board;
   let markup;
 
-  let [state, setState] = useState<State>({ boardWidth: null, marginTop: 0 });
-  let { boardWidth, marginTop } = state;
+  let [boardStyles, setBoardStyles] = useState<State>({
+    boardWidth: null,
+    marginTop: 0,
+  });
+  let { boardWidth, marginTop } = boardStyles;
 
   let containerRef = useRef(null);
+  let prevLastNodeRef = useRef(lastNode);
 
   function setBoardWidth() {
     if (containerRef.current) {
@@ -47,7 +62,7 @@ export default function BoardContainer(props: Props) {
         nextBoardWidth = Math.min(containerWidth, containerHeight - 35);
         nextMarginTop = 0;
       }
-      setState({ boardWidth: nextBoardWidth, marginTop: nextMarginTop });
+      setBoardStyles({ boardWidth: nextBoardWidth, marginTop: nextMarginTop });
     }
   }
 
@@ -69,6 +84,22 @@ export default function BoardContainer(props: Props) {
       window.removeEventListener("resize", setBoardWidth);
     };
   }, []);
+
+  useEffect(() => {
+    if (lastNode) {
+      if (!prevLastNodeRef.current) {
+        prevLastNodeRef.current = lastNode;
+      } else if (lastNode !== prevLastNodeRef.current) {
+        lastNode.props.forEach((prop) => {
+          if (prop.name === "MOVE") {
+            SOUNDS.STONE_PLACED.play("click");
+          }
+        });
+
+        prevLastNodeRef.current = lastNode;
+      }
+    }
+  }, [lastNode]);
 
   if (!boardWidth) {
     return <div className="GameScreen-board-container" ref={containerRef} />;
