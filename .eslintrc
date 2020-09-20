@@ -24,6 +24,7 @@
   "extends": [
     "plugin:flowtype/recommended",
     "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
     "prettier",
     "prettier/flowtype",
     "prettier/react",
