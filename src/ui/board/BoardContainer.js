@@ -22,7 +22,7 @@ type Props = {
   ) => any,
 };
 
-type State = {
+type BoardStyles = {
   boardWidth: ?number,
   marginTop: number,
 };
@@ -41,7 +41,7 @@ export default function BoardContainer(props: Props) {
   let board;
   let markup;
 
-  let [boardStyles, setBoardStyles] = useState<State>({
+  let [boardStyles, setBoardStyles] = useState<BoardStyles>({
     boardWidth: null,
     marginTop: 0,
   });
@@ -58,10 +58,12 @@ export default function BoardContainer(props: Props) {
       let containerHeight = containerEl.offsetHeight;
       let nextBoardWidth = Math.min(containerWidth, containerHeight);
       let nextMarginTop = -35;
+
       if (containerWidth <= 736 || containerWidth - nextBoardWidth < 180) {
         nextBoardWidth = Math.min(containerWidth, containerHeight - 35);
         nextMarginTop = 0;
       }
+
       setBoardStyles({ boardWidth: nextBoardWidth, marginTop: nextMarginTop });
     }
   }
@@ -77,6 +79,7 @@ export default function BoardContainer(props: Props) {
   }
 
   useEffect(() => {
+    // Adjust board dimensions when the window resizes.
     setBoardWidth();
     window.addEventListener("resize", setBoardWidth);
 
@@ -86,15 +89,22 @@ export default function BoardContainer(props: Props) {
   }, []);
 
   useEffect(() => {
+    // Stone placement sound effect.
     if (lastNode) {
       if (!prevLastNodeRef.current) {
         prevLastNodeRef.current = lastNode;
       } else if (lastNode !== prevLastNodeRef.current) {
-        lastNode.props.forEach((prop) => {
+        // Only play the sound if the current last-node is different from the
+        // previous last node. This guarantees the sound is not played on the
+        // first board render.
+        for (let i = 0; i < lastNode.props.length; i += 1) {
+          let prop = lastNode.props[i];
+
           if (prop.name === "MOVE") {
             SOUNDS.STONE_PLACED.play("click");
+            break;
           }
-        });
+        }
 
         prevLastNodeRef.current = lastNode;
       }
